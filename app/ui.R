@@ -34,26 +34,7 @@ ui <- function(request){
       shinydashboard::tabItems(
         ### Body: Data Select ###                
         shinydashboard::tabItem("analyze_image", 
-                                shiny::sidebarLayout(
-                                  shiny::sidebarPanel(
-                                 
-                                      title = "Image and Analysis Selection",
-                                      shiny::fileInput("file1", label = "Input Image"),
-                                      selectInput("analysis_type", "Analysis Type", 
-                                                  c("Facial Detection" = "FACE_DETECTION",
-                                                    "Label Detection" = "LABEL_DETECTION",
-                                                    "Landmark Detection" = "LANDMARK_DETECTION",
-                                                    "Logo Detection" = "LOGO_DETECTION",
-                                                    "Object Localization" = "OBJECT_LOCALIZATION",
-                                                    "Text Detection" = "TEXT_DETECTION")
-                                      ),
-                                      actionButton("analyze", "Analyze!")
-                                    
-                                  ),
-                                  shiny::mainPanel(
-                                    uiOutput("image_results")
-                                    )
-                                  )
+                                uiOutput("image_analyze")
                                 )
       )
     )

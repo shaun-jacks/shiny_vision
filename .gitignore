@@ -5,3 +5,4 @@
 app/.httr-oauth
 R/gcp_vision_api_R.R
 .DS_Store
+.httr-oauth
