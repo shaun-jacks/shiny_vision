@@ -11,7 +11,11 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$analysis_type, {
-    values$analysis_selected = T
+    if (input$analysis_type != "analysis_select") {
+      values$analysis_selected = T
+    } else if (input$analysis_type == "analysis_select") {
+      values$analysis_selected = F
+    }
     values$analysis_type = input$analysis_type
   })
   
@@ -161,7 +165,8 @@ server <- function(input, output, session) {
             title = "Image and Analysis Selection",
             shiny::fileInput("file1", label = "Input Image"),
             selectInput("analysis_type", "Analysis Type", 
-                        c("Facial Detection" = "FACE_DETECTION",
+                        c("Select Analysis" = "analysis_select",
+                          "Facial Detection" = "FACE_DETECTION",
                           "Label Detection" = "LABEL_DETECTION",
                           "Landmark Detection" = "LANDMARK_DETECTION",
                           "Logo Detection" = "LOGO_DETECTION",
@@ -252,16 +257,3 @@ server <- function(input, output, session) {
 }
 
 # FACE_DETECTION, LANDMARK_DETECTION, LOGO_DETECTION, LABEL_DETECTION, TEXT_DETECTION, IMAGE_PROPERTIES, SAFE_SEARCH_DETECTION
-
-# values = list(img_res = NULL)
-# img_folder = "~/Desktop/HackDavis19/test_photos/"
-# list.files(img_folder)
-# img_paths = list.files(img_folder)
-# values$img_res = paste0(img_folder, "group_3.jpg")
-# face_detect = getGoogleVisionResponse(values$img_res, "FACE_DETECTION")
-# land_detect = getGoogleVisionResponse(values$img_res, "LANDMARK_DETECTION")
-# logo_detect = getGoogleVisionResponse(values$img_res, "LOGO_DETECTION")
-# label_detect = getGoogleVisionResponse(values$img_res, "LABEL_DETECTION")
-# text_detect = getGoogleVisionResponse(values$img_res, "TEXT_DETECTION")
-# img_prop = getGoogleVisionResponse(values$img_res, "IMAGE_PROPERTIES")
-# safe_search = getGoogleVisionResponse(values$img_res, "SAFE_SEARCH_DETECTION")
