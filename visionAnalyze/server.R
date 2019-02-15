@@ -33,27 +33,31 @@ server <- function(input, output, session) {
   
   #photo <- magick::image_read(input$file1$datapath)
   
-  output$picture2 <- renderPlot({
+  output$picture2 <- renderImage({
     req(values$file_path)
     photo = image_convert(magick::image_read(values$file_path), "jpg")
-    photo = as_EBImage(photo)
-    width = dim(photo)[1]
-    height = dim(photo)[2]
-    plot(photo, xaxs="i", yaxs="i")
+    photo_info = magick::image_info(photo)
+    width = photo_info$width
+    height = photo_info$height
     if (values$analysis_type == "FACE_DETECTION") {
       if (!is.null(values$img_res$fdBoundingPoly$vertices)) {
+        magick::image_draw(photo)
         bounding_boxes = values$img_res$fdBoundingPoly$vertices
         points_lst = values$img_res$landmarks
         mapply(x = bounding_boxes, y = c(1:length(bounding_boxes)), z = points_lst, function(x, y, z) {
-          polygon(x = x[[1]], y = x[[2]], border = 'red', lwd = 4)
+          polygon(x = x[[1]], y = x[[2]], border = 'red', lwd = 4*height/400)
           text(x = x[[1]][[3]], y = x[[2]][[3]], 
                labels = as.character(y), 
                offset = 1,
                cex = 1, 
                font = 2,
                col = "green")
-          points(x = z$position$x, y = z$position$y, col = "green", lwd = 1, pch = 3)
+          points(x = z$position$x, y = z$position$y, col = "green", lwd = height/300, pch = 3)
         })
+        photo = magick::image_capture()
+        dev.off()
+        photo = magick::image_resize(photo, "500x500")
+        tmpFile <- image_write(photo, tempfile(fileext='jpg'), format = 'jpg')
       } else {
         text(x = width/2, y = height/2, labels = "No features detected", 
              col = "red", font = 2, offset = 1, cex = 1)
@@ -143,6 +147,7 @@ server <- function(input, output, session) {
       }
     }
     
+    list(src = tmpFile)
     
   })
 
@@ -183,7 +188,7 @@ server <- function(input, output, session) {
     } else if (values$upload_step == 2) {
       shiny::fluidPage(
         shiny::tagList(
-          shiny::fluidRow(plotOutput("picture2")),
+          shiny::fluidRow(imageOutput("picture2")),
           br(),
           br(),
           shinydashboard::box(
