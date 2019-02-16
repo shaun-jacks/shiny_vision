@@ -3,7 +3,7 @@ ui <- function(request){
   
   
   shinydashboard::dashboardPage(
-
+    
     header = shinydashboard::dashboardHeader(
       title = shiny::HTML(paste0(strong('Vision Analyze'))),
       titleWidth=200),
@@ -35,7 +35,7 @@ ui <- function(request){
         ### Body: Data Select ###                
         shinydashboard::tabItem("analyze_image", 
                                 uiOutput("image_analyze")
-                                )
+        )
       )
     )
   )

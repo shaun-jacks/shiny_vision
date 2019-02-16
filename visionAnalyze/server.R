@@ -4,12 +4,13 @@ server <- function(input, output, session) {
                            analysis_selected = F,
                            warning_inputs = "")
   
-  
+  #### When image has been uploaded ####
   observeEvent(input$file1, {
     values$file_uploaded = T
-    values$file_path = input$file1$datapath
+    values$file_path = input$file1$datapath # store uploaded image filepath
   })
   
+  #### Store analysis type selected ####
   observeEvent(input$analysis_type, {
     if (input$analysis_type != "analysis_select") {
       values$analysis_selected = T
@@ -19,25 +20,28 @@ server <- function(input, output, session) {
     values$analysis_type = input$analysis_type
   })
   
+  #### When Analyze button toggled ####
   observeEvent(input$analyze, {
     if (!((values$file_uploaded) & (values$analysis_selected))) {
       values$warning_inputs = "Must select an analysis and upload a file"
     } else {
-      cat(values$analysis_type)
+      # Begin progress bar
       shiny::withProgress(message = "Obtaining Google Vision Analysis", value = 0.1, {
         
         shiny::incProgress(amount = 0, detail = "sending photo to Google Vision")
+        # send to Google Vision
         values$img_res <- getGoogleVisionResponse(input$file1$datapath, feature = values$analysis_type)
         shiny::incProgress(amount = .8, detail = "Done")
         
       })
+      # Increment step to render new UI
       values$upload_step = values$upload_step + 1
       
     }
   })
   
   
-
+  #### Render Image with analysis results ####
   output$picture2 <- renderImage({
     
     shiny::withProgress(message = "Rendering Image", value = 0.1, {
@@ -53,7 +57,7 @@ server <- function(input, output, session) {
       height = photo_info$height
       max_height <- 400
       rescale_lwd <- 2/max_height * height
- 
+      
       ########################
       #### FACE DETECTION ####
       ########################
@@ -90,11 +94,11 @@ server <- function(input, output, session) {
           text(x = width/2, y = height/2, labels = "No features detected", 
                col = "red",  offset = 1, cex = 4)
         }
-      
-      ############################
-      #### Landmark Detection ####
-      ############################
-      
+        
+        ############################
+        #### Landmark Detection ####
+        ############################
+        
       } else if (values$analysis_type == "LANDMARK_DETECTION") {
         # If no features detected
         if(is.null(values$img_res$boundingPoly$vertices)) {
@@ -103,7 +107,10 @@ server <- function(input, output, session) {
                cex = 1)
         } else {
           # draw magick object with graphics device
+          shiny::incProgress(amount = 0, detail = "Using graphics device to draw image")
           magick::image_draw(photo)
+          shiny::incProgress(amount = 0.3)
+          shiny::incProgress(amount = 0, detail = "Drawing landmark bounding boxes detected")
           # save bounding boxes, and vector of descriptions and predictions
           bounding_boxes = values$img_res$boundingPoly$vertices
           name_land = values$img_res$description
@@ -118,50 +125,65 @@ server <- function(input, output, session) {
                         cex = 5, 
                         col = "green")
                  })
-          # save output onto magick object
+          shiny::incProgress(amount = 0.3, detail = "Capturing image and storing into magick image pointer")
           photo = magick::image_capture()
+          shiny::incProgress(0.1)
           dev.off()
           # wtite magick object onto temp file used for image shiny output
           tmpFile <- image_write(photo, tempfile(fileext='jpg'), format = 'jpg')
+          shiny::incProgress(0.1)
         }
-      
-      #############################
-      #### Object Localization ####
-      #############################
+        
+        #############################
+        #### Object Localization ####
+        #############################
         
       } else if (values$analysis_type == "OBJECT_LOCALIZATION") {
         if (!is.null( values$img_res$boundingPoly$normalizedVertices)) {
-          magick::image_draw(photo)
           
+          shiny::incProgress(amount = 0, detail = "Using graphics device to draw image")
+          magick::image_draw(photo)
+          shiny::incProgress(amount = 0.3)
+          
+          shiny::incProgress(amount = 0, detail = "Drawing bounding boxes detected for object localization")
           bounding_boxes <- values$img_res$boundingPoly$normalizedVertices
           mapply(x = bounding_boxes, y = values$img_res$name, function(x, y) {
-            polygon(x = x[[1]]*width, 
-                    y = x[[2]]*height, 
+            polygon(x = x[[1]]*width, # since vertices are normalized, multiply by width
+                    y = x[[2]]*height, # since vertices are normalized, multiply by height
                     border = 'white', 
                     lwd = rescale_lwd)
-            text(x = x[[1]][[3]]*width, 
-                 y = x[[2]][[3]]*height, 
+            text(x = x[[1]][[1]]*width, 
+                 y = x[[2]][[1]]*height, 
                  labels = as.character(y),
                  offset = 1,
                  cex = 3, 
                  col = "green")
           }) 
+          
+          shiny::incProgress(amount = 0.3, detail = "Capturing image and storing into magick image pointer")
           photo = magick::image_capture()
+          shiny::incProgress(0.1)
           dev.off()
+          # wtite magick object onto temp file used for image shiny output
           tmpFile <- image_write(photo, tempfile(fileext='jpg'), format = 'jpg')
+          shiny::incProgress(0.1)
         } else {
           text(x = width/2, y = height/2, labels = "No features detected", 
-               col = "red", font = 2, offset = 1, cex = 1)
+               col = "red", offset = 1, cex = 3)
         }
         
-      ########################
-      #### Text Detection ####
-      ########################
+        ########################
+        #### Text Detection ####
+        ########################
         
       } else if (values$analysis_type == "TEXT_DETECTION") {
         if (!is.null(values$img_res$boundingPoly$vertices)) {
-          magick::image_draw(photo)
           
+          shiny::incProgress(amount = 0, detail = "Using graphics device to draw image")
+          magick::image_draw(photo)
+          shiny::incProgress(amount = 0.3)
+          
+          shiny::incProgress(amount = 0, detail = "Drawing bounding boxes detected for text detection")
           bounding_boxes <- values$img_res$boundingPoly$vertices
           mapply(x =bounding_boxes, y = c(1:length(bounding_boxes)), function(x, y) {
             polygon(x = x[[1]], 
@@ -176,52 +198,69 @@ server <- function(input, output, session) {
                  font = rescale_lwd * 6,
                  col = "white")
           }) 
+          
+          shiny::incProgress(amount = 0.3, detail = "Capturing image and storing into magick image pointer")
           photo = magick::image_capture()
+          shiny::incProgress(0.1)
           dev.off()
           tmpFile <- image_write(photo, tempfile(fileext='jpg'), format = 'jpg')
+          shiny::incProgress(0.1)
+          
         } else {
           text(x = width/2, y = height/2, labels = "No features detected", 
                col = "red", font = 2, offset = 1, cex = 1)
         }
         
-      ########################
-      #### Logo Detection ####
-      ########################
+        ########################
+        #### Logo Detection ####
+        ########################
         
       } else if (values$analysis_type == "LOGO_DETECTION") {
         if (!is.null(values$img_res$boundingPoly$vertices)) {
+          
+          shiny::incProgress(amount = 0, detail = "Using graphics device to draw image")
           magick::image_draw(photo)
+          shiny::incProgress(amount = 0.3)
+          shiny::incProgress(amount = 0, detail = "Drawing bounding boxes detected for logo detection")
           
           bounding_boxes <- values$img_res$boundingPoly$vertices
-          mapply(x =bounding_boxes, y = c(1:length(bounding_boxes)), function(x, y) {
-            polygon(x = x[[1]], 
-                    y = x[[2]], 
-                    border = 'green', 
-                    lwd = rescale_lwd)
-            text(x = x[[1]][[3]], 
-                 y = x[[2]][[3]], 
-                 labels = as.character(y),
-                 offset = 1,
-                 cex = 3, 
-                 col = "white")
-          }) 
+          mapply(x =bounding_boxes, y = c(1:length(bounding_boxes)), 
+                 function(x, y) {
+                   polygon(x = x[[1]], 
+                           y = x[[2]], 
+                           border = 'green', 
+                           lwd = rescale_lwd)
+                   text(x = x[[1]][[1]], 
+                        y = x[[2]][[1]], 
+                        labels = as.character(y),
+                        offset = 1,
+                        cex = 3, 
+                        col = "white")
+                 }) 
+          
+          shiny::incProgress(amount = 0.3, detail = "Capturing image and storing into magick image pointer")
+          # save output onto magick object
           photo = magick::image_capture()
+          shiny::incProgress(0.1)
           dev.off()
+          # wtite magick object onto temp file used for image shiny output
           tmpFile <- image_write(photo, tempfile(fileext='jpg'), format = 'jpg')
+          shiny::incProgress(0.1)
+          
         } else {
           text(x = width/2, y = height/2, labels = "No features detected", 
                col = "red", font = 2, offset = 1, cex = 1)
         }
       }
       
-    })
+    }) # end withProgress bar
     
-   
+    # src is image to output, and height is max height of image on shiny output
     list(src = tmpFile, height = 400)
     
   })
-
   
+  # on click of restart button, reset all reactive values
   observeEvent(input$reset, {
     values$img_res = NULL
     values$file_path = ""
@@ -233,32 +272,36 @@ server <- function(input, output, session) {
     values$upload_step = 1
   })
   
+  ### Body of image_analyze tab ###
   output$image_analyze <- renderUI({
+    ### Image upload UI Step ###
     if (values$upload_step == 1) {
       shiny::sidebarLayout(
         shiny::sidebarPanel(
-            title = "Image and Analysis Selection",
-            shiny::fileInput("file1", label = "Input Image",
-                             accept = c(
-                               "image/png",
-                               "image/jpeg"
-                             )),
-            selectInput("analysis_type", "Analysis Type", 
-                        c("Select Analysis" = "analysis_select",
-                          "Facial Detection" = "FACE_DETECTION",
-                          "Label Detection" = "LABEL_DETECTION",
-                          "Landmark Detection" = "LANDMARK_DETECTION",
-                          "Logo Detection" = "LOGO_DETECTION",
-                          "Object Localization" = "OBJECT_LOCALIZATION",
-                          "Text Detection" = "TEXT_DETECTION")
-            ),
-            actionButton("analyze", "Analyze!"),
-            br(),
-            values$warning_inputs
+          title = "Image and Analysis Selection",
+          shiny::fileInput("file1", 
+                           label = "Input Image",
+                           accept = c(
+                             "image/png",
+                             "image/jpeg"
+                           )),
+          selectInput("analysis_type", "Analysis Type", 
+                      c("Select Analysis" = "analysis_select",
+                        "Facial Detection" = "FACE_DETECTION",
+                        "Label Detection" = "LABEL_DETECTION",
+                        "Landmark Detection" = "LANDMARK_DETECTION",
+                        "Logo Detection" = "LOGO_DETECTION",
+                        "Object Localization" = "OBJECT_LOCALIZATION",
+                        "Text Detection" = "TEXT_DETECTION")
           ),
+          actionButton("analyze", "Analyze!"),
+          br(),
+          values$warning_inputs
+        ),
         shiny::mainPanel(
         )
       )
+      ### Image Analysis UI Step ###
     } else if (values$upload_step == 2) {
       shiny::fluidPage(
         shiny::tagList(
@@ -290,7 +333,7 @@ server <- function(input, output, session) {
   })
   
   
-  
+  #### Analysis Table ####
   output$results <- DT::renderDataTable({
     if (values$analysis_type == "FACE_DETECTION") {
       as.data.frame(
@@ -299,30 +342,30 @@ server <- function(input, output, session) {
           sorrow = values$img_res$sorrowLikelihood,
           anger = values$img_res$angerLikelihood, 
           surprise = values$img_res$surpriseLikelihood
-          )
         )
+      )
     } else if (values$analysis_type == "OBJECT_LOCALIZATION") {
       as.data.frame(
         list(
           `Object Detected` = values$img_res$name,
           Score = values$img_res$score
-          )
         )
+      )
     } else if (values$analysis_type == "LANDMARK_DETECTION") {
       as.data.frame(
         list(
           Landmark = values$img_res$description, 
           Score = values$img_res$score
-          )
         )
+      )
     } else if (values$analysis_type == "LABEL_DETECTION") {
       as.data.frame(
         list(
           Description = values$img_res$description,
           Score = values$img_res$score,
           topicality = values$img_res$topicality
-          )
         )
+      )
     } else if (values$analysis_type == "TEXT_DETECTION") {
       as.data.frame(
         list(
@@ -341,5 +384,3 @@ server <- function(input, output, session) {
   }, options = list(scrollX = TRUE, searching = TRUE, scrollY = "600px", scrollCollapse = TRUE, dom = 't'))
   
 }
-
-# FACE_DETECTION, LANDMARK_DETECTION, LOGO_DETECTION, LABEL_DETECTION, TEXT_DETECTION, IMAGE_PROPERTIES, SAFE_SEARCH_DETECTION
