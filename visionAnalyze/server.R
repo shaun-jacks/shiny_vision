@@ -37,72 +37,97 @@ server <- function(input, output, session) {
   })
   
   
-  #photo <- magick::image_read(input$file1$datapath)
-  
+
   output$picture2 <- renderImage({
     
     shiny::withProgress(message = "Rendering Image", value = 0.1, {
+      
       req(values$file_path)
+      
       shiny::incProgress(amount = 0, detail = "Reading image and converting to image pointer with Magick")
-      photo = image_convert(magick::image_read(values$file_path), "jpg")
+      photo = magick::image_read(values$file_path)
       shiny::incProgress(0.1)
+      # obtain photo dimensions
       photo_info = magick::image_info(photo)
       width = photo_info$width
       height = photo_info$height
+      max_height <- 400
+      rescale_lwd <- 2/max_height * height
+ 
+      ########################
+      #### FACE DETECTION ####
+      ########################
+      
       if (values$analysis_type == "FACE_DETECTION") {
+        # if faces were detected: draw landmarks and bounding polygons
         if (!is.null(values$img_res$fdBoundingPoly$vertices)) {
           shiny::incProgress(amount = 0, detail = "Using graphics device to draw image")
-          magick::image_draw(photo)
+          magick::image_draw(photo) # draw photo with graphics device
           shiny::incProgress(amount = 0.3)
           shiny::incProgress(amount = 0, detail = "Drawing bounding boxes and facial landmarks")
-          bounding_boxes = values$img_res$fdBoundingPoly$vertices
-          points_lst = values$img_res$landmarks
+          bounding_boxes = values$img_res$fdBoundingPoly$vertices # save list of bounding boxes
+          points_lst = values$img_res$landmarks # save list of point locations of facial landmarks
           mapply(x = bounding_boxes, y = c(1:length(bounding_boxes)), z = points_lst, function(x, y, z) {
-            polygon(x = x[[1]], y = x[[2]], border = 'red', lwd = 4)
+            polygon(x = x[[1]], y = x[[2]], border = 'red', lwd = rescale_lwd)
             text(x = x[[1]][[3]], y = x[[2]][[3]], 
-                 labels = as.character(y), 
+                 labels = as.character(y), # label each image with an id that will be referenced in table
                  offset = 1,
-                 cex = 1, 
-                 font = 2,
-                 col = "green")
-            points(x = z$position$x, y = z$position$y, col = "green", lwd = 2, pch = 3)
+                 cex = 3, # text magnified by this factor relative to default
+                 col = "white")
+            points(x = z$position$x, # plot the x coordinates of facial landmarks
+                   y = z$position$y, # plot the y coordinates of facial landmarks
+                   col = "green", 
+                   lwd = rescale_lwd, 
+                   pch = 3)
           })
           shiny::incProgress(amount = 0.3, detail = "Capturing image and storing into magick image pointer")
-          photo = magick::image_capture()
+          photo = magick::image_capture() # This saves the graphics output into a magick image object
           shiny::incProgress(0.1)
           dev.off()
-          tmpFile <- image_write(photo, tempfile(fileext='jpg'), format = 'jpg')
+          tmpFile <- image_write(photo, tempfile(fileext='jpg'), format = 'jpg') # tmpfile for output of image to shiny
           shiny::incProgress(0.1)
         } else {
           text(x = width/2, y = height/2, labels = "No features detected", 
-               col = "red", font = 2, offset = 1, cex = 1)
+               col = "red",  offset = 1, cex = 4)
         }
-        
+      
+      ############################
+      #### Landmark Detection ####
+      ############################
+      
       } else if (values$analysis_type == "LANDMARK_DETECTION") {
+        # If no features detected
         if(is.null(values$img_res$boundingPoly$vertices)) {
           text(x = width/2, y = height/2, labels = "No features detected", col = "red", font = 2,
                offset = 1,
                cex = 1)
         } else {
+          # draw magick object with graphics device
           magick::image_draw(photo)
-          
+          # save bounding boxes, and vector of descriptions and predictions
           bounding_boxes = values$img_res$boundingPoly$vertices
           name_land = values$img_res$description
           pred_score = values$img_res$score
+          # output bounding boxes, descriptions, and predictions, with graphics
           mapply(vertice = bounding_boxes, name_land = name_land, pred_score = pred_score,
                  function(vertice, name_land, pred_score) {
-                   polygon(x = vertice[[1]], y = vertice[[2]], border = 'red', lwd = height/100)
+                   polygon(x = vertice[[1]], y = vertice[[2]], border = 'red', lwd = rescale_lwd)
                    text(x = vertice[[1]][[3]], y = vertice[[2]][[3]], 
                         labels = paste(as.character(name_land), as.character(pred_score)),
                         offset = 1,
-                        cex = 1, 
-                        font = height/100,
+                        cex = 5, 
                         col = "green")
                  })
+          # save output onto magick object
           photo = magick::image_capture()
           dev.off()
+          # wtite magick object onto temp file used for image shiny output
           tmpFile <- image_write(photo, tempfile(fileext='jpg'), format = 'jpg')
         }
+      
+      #############################
+      #### Object Localization ####
+      #############################
         
       } else if (values$analysis_type == "OBJECT_LOCALIZATION") {
         if (!is.null( values$img_res$boundingPoly$normalizedVertices)) {
@@ -113,13 +138,12 @@ server <- function(input, output, session) {
             polygon(x = x[[1]]*width, 
                     y = x[[2]]*height, 
                     border = 'white', 
-                    lwd = height/100)
+                    lwd = rescale_lwd)
             text(x = x[[1]][[3]]*width, 
                  y = x[[2]][[3]]*height, 
                  labels = as.character(y),
                  offset = 1,
-                 cex = 1, 
-                 font = height/10,
+                 cex = 3, 
                  col = "green")
           }) 
           photo = magick::image_capture()
@@ -130,6 +154,10 @@ server <- function(input, output, session) {
                col = "red", font = 2, offset = 1, cex = 1)
         }
         
+      ########################
+      #### Text Detection ####
+      ########################
+        
       } else if (values$analysis_type == "TEXT_DETECTION") {
         if (!is.null(values$img_res$boundingPoly$vertices)) {
           magick::image_draw(photo)
@@ -139,13 +167,13 @@ server <- function(input, output, session) {
             polygon(x = x[[1]], 
                     y = x[[2]], 
                     border = 'green', 
-                    lwd = 1)
+                    lwd = rescale_lwd)
             text(x = x[[1]][[3]], 
                  y = x[[2]][[3]], 
                  labels = as.character(y),
                  offset = 1,
                  cex = 1, 
-                 font = 2,
+                 font = rescale_lwd * 6,
                  col = "white")
           }) 
           photo = magick::image_capture()
@@ -155,6 +183,11 @@ server <- function(input, output, session) {
           text(x = width/2, y = height/2, labels = "No features detected", 
                col = "red", font = 2, offset = 1, cex = 1)
         }
+        
+      ########################
+      #### Logo Detection ####
+      ########################
+        
       } else if (values$analysis_type == "LOGO_DETECTION") {
         if (!is.null(values$img_res$boundingPoly$vertices)) {
           magick::image_draw(photo)
@@ -164,13 +197,12 @@ server <- function(input, output, session) {
             polygon(x = x[[1]], 
                     y = x[[2]], 
                     border = 'green', 
-                    lwd = 1)
+                    lwd = rescale_lwd)
             text(x = x[[1]][[3]], 
                  y = x[[2]][[3]], 
                  labels = as.character(y),
                  offset = 1,
-                 cex = 1, 
-                 font = 2,
+                 cex = 3, 
                  col = "white")
           }) 
           photo = magick::image_capture()
@@ -185,7 +217,7 @@ server <- function(input, output, session) {
     })
     
    
-    list(src = tmpFile, width = 400)
+    list(src = tmpFile, height = 400)
     
   })
 
@@ -206,7 +238,11 @@ server <- function(input, output, session) {
       shiny::sidebarLayout(
         shiny::sidebarPanel(
             title = "Image and Analysis Selection",
-            shiny::fileInput("file1", label = "Input Image"),
+            shiny::fileInput("file1", label = "Input Image",
+                             accept = c(
+                               "image/png",
+                               "image/jpeg"
+                             )),
             selectInput("analysis_type", "Analysis Type", 
                         c("Select Analysis" = "analysis_select",
                           "Facial Detection" = "FACE_DETECTION",

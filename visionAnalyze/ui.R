@@ -3,12 +3,7 @@ ui <- function(request){
   
   
   shinydashboard::dashboardPage(
-    ### changing theme
-    
-    # shinyDashboardThemes(
-    #  theme = "grey_dark"
-    #),
-    
+
     header = shinydashboard::dashboardHeader(
       title = shiny::HTML(paste0(strong('Vision Analyze'))),
       titleWidth=200),
