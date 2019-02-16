@@ -8,20 +8,18 @@ ui <- function(request){
     # shinyDashboardThemes(
     #  theme = "grey_dark"
     #),
-    dashboardthemes::shinyDashboardThemes(
-      theme = "poor_mans_flatly"
-    ),
     
     header = shinydashboard::dashboardHeader(
-      title = shiny::HTML(paste0(strong('Google Vision R'))),
-      titleWidth=250),
+      title = shiny::HTML(paste0(strong('Vision Analyze'))),
+      titleWidth=200),
     
     ##### Sidebar #####
     sidebar = shinydashboard::dashboardSidebar(
+      width = 200,
       shinydashboard::sidebarMenu(
         id = 'id_sidebar',
         
-        shinydashboard::menuItem(text = 'Anaylze Image',
+        shinydashboard::menuItem(text = 'Analyze Image',
                                  tabName = 'analyze_image',
                                  icon = shiny::icon('binoculars'))
         
@@ -31,6 +29,13 @@ ui <- function(request){
     
     ##### Body #####
     body = shinydashboard::dashboardBody(
+      tags$head(
+        tags$link(
+          rel = "stylesheet",
+          type = "text/css",
+          href = "custom.css"
+        )
+      ),
       shinydashboard::tabItems(
         ### Body: Data Select ###                
         shinydashboard::tabItem("analyze_image", 

@@ -1,0 +1,58 @@
+/* header title font */
+.main-header .logo {
+  font-family: "helvetica",  serif, Times, "Times New Roman";
+  font-weight: bold;
+  font-size: 24px;
+}
+
+/* background color of header (logo part) */
+.skin-blue .main-header .logo {
+          background-color: #252525;
+        }
+/* logo when hovered */
+.skin-blue .main-header .logo:hover {
+          background-color: gray;
+}
+                              
+/* background color for remaining part of the header */
+.skin-blue .main-header .navbar {
+                              background-color: #999999;
+                              } 
+                              
+/* toggle button when hovered  */                    
+         .skin-blue .main-header .navbar .sidebar-toggle:hover{
+                              background-color: gray;
+                              }
+                              
+/* main sidebar */
+.skin-blue .main-sidebar {
+                        background-color: #999999;
+                      } 
+                      
+/* active sidebar menu item */
+.skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
+                          background-color: white;
+                          color:black;
+                          }
+                          
+/* sidebar menuitems when mouse hover */
+         .skin-blue .main-sidebar .sidebar .sidebar-menu a:hover{
+                              background-color: gray;
+                              color:white;
+                              }
+                              
+/* body */
+.content-wrapper, .right-side {
+   background-color: #252525;
+}
+
+.box.box-solid.box-primary>.box-header {
+  background:#999999
+                    }
+
+.box.box-solid.box-primary{
+border-bottom-color:#999999;
+border-left-color:#999999;
+border-right-color:#999999;
+border-top-color:#999999;
+}
