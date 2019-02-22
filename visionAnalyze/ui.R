@@ -1,11 +1,11 @@
 ui <- function(request){
   
-  
-  
   shinydashboard::dashboardPage(
     
     header = shinydashboard::dashboardHeader(
-      title = shiny::HTML(paste0(strong('Vision Analyze'))),
+      title = shiny::HTML(
+        paste0(strong('Vision Analyze'))
+        ),
       titleWidth=200),
     
     ##### Sidebar #####
@@ -13,13 +13,12 @@ ui <- function(request){
       width = 200,
       shinydashboard::sidebarMenu(
         id = 'id_sidebar',
-        
         shinydashboard::menuItem(text = 'Analyze Image',
                                  tabName = 'analyze_image',
-                                 icon = shiny::icon('binoculars'))
+                                 icon = shiny::icon('binoculars')
+                                 )
         
       )
-      
     ),
     
     ##### Body #####
