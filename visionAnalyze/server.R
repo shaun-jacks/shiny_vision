@@ -297,7 +297,7 @@ server <- function(input, output, session) {
               "Select Analysis"     = "analysis_select",
               "Facial Detection"    = "FACE_DETECTION",
               "Label Detection"     = "LABEL_DETECTION",
-              "Landmark Detection"  = "LANDMARK DETECTION",
+              "Landmark Detection"  = "LANDMARK_DETECTION",
               "Logo Detection"      = "LOGO_DETECTION",
               "Object Localization" = "OBJECT_LOCALIZATION",
               "Text Detection"      = "TEXT_DETECTION"
