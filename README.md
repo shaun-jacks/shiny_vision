@@ -14,7 +14,7 @@ There are two motivations:
 	* **Facial Detection**, **Object Localization**, **Text Detection**, **Landmark Detection**, and **Logo Detection**.
 
 
-**A project demo can be found [here](https://shaun-jacks.shinyapps.io/visionanalyze/).** Note that the demo works most reliably on a desktop computer as opposed to mobile devices.
+**A project demo can be found [here](https://shaun-jacks.shinyapps.io/visionanalyze/).** Note that the demo works most reliably with Google Chrome.
 
 
 ### Prerequisites
